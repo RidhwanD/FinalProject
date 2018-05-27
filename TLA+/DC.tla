@@ -1,6 +1,6 @@
--------------------------------- MODULE DC4 --------------------------------
+------------------------------- MODULE DC_mx -------------------------------
 
-EXTENDS Integers, TLC
+EXTENDS Integers, TLC, ModExp
 
 VARIABLES a0, a1, a2, a3, g, key, x0, x1, x2, x3, h0, h1, h2, h3, ck0, ck1, ck2, ck3, pc, p
 
@@ -13,7 +13,7 @@ Init == (* Global variables *)
         /\ a3 \in Nat       (* Secret exponent of P3 *)
         /\ p = 13           (* Finite field size *)
         /\ g = 2            (* Generator of Fp *)
-        /\ key = (((g ^ a0 % p) ^ a1 % p) ^ a2 % p) ^ a3 % p (* Shared key *)
+        /\ key = mod_exp(a3,mod_exp(a2,mod_exp(a1,mod_exp(a0,g,1,p),1,p),1,p),1,p) (* Shared key *)
         /\ x0 = 0           (* Value computed by P0 *)
         /\ x1 = 0           (* Value computed by P1 *)
         /\ x2 = 0           (* Value computed by P2 *)
@@ -29,13 +29,13 @@ Init == (* Global variables *)
         /\ pc = "Phase 1"
         
 Phase1 == /\ pc = "Phase 1"
-          /\ x0' = g ^ a0 % p                        (* P0 calculates x0 = g ^ a0 mod p, sends it to P1 *)    
-          /\ x2' = g ^ a2 % p                        (* P2 calculates x2 = g ^ a2 mod p, sends it to p3 *)
+          /\ x0' = mod_exp(a0,g,1,p)                  (* P0 calculates x0 = g ^ a0 mod p, sends it to P1 *)    
+          /\ x2' = mod_exp(a2,g,1,p)                  (* P2 calculates x2 = g ^ a2 mod p, sends it to p3 *)
           /\ h1' = h1 + 1                            (* P1 receives x0, h1 increases *)
-          /\ x1' = x0' ^ a1 % p                      (* P1 calculates x1 = x0 ^ a1 mod p, sends it to P2 and P3 *)
+          /\ x1' = mod_exp(a1,x0',1,p)                (* P1 calculates x1 = x0 ^ a1 mod p, sends it to P2 and P3 *)
           /\ h3' = h3 + 1                            (* P3 receives x2, h3 increases *)
-          /\ x3' = x2' ^ a3 % p                      (* P3 calculates x3 = x2 ^ a3 mod p, sends it to P0 and P1 *)
-          /\ IF x0' = key /\ h0 = 2                 (* If the value of x0 equals key and P0 has received two *)
+          /\ x3' = mod_exp(a3,x2',1,p)                (* P3 calculates x3 = x2 ^ a3 mod p, sends it to P0 and P1 *)
+          /\ IF x0' = key /\ h0 = 2                  (* If the value of x0 equals key and P0 has received two *)
                  THEN /\ ck0' = TRUE                 (* messages, then ck0 becomes TRUE *)
                  ELSE /\ ck0' = ck0
                       
@@ -59,10 +59,10 @@ Phase2 == /\ pc = "Phase 2"
           /\ h1' = h1 + 1                            (* P1 receives x3, h1 increases *)
           /\ h2' = h2 + 1                            (* P2 receives x1, h2 increases *)
           /\ h3' = h3 + 1                            (* P3 receives x1, h3 increases *)
-          /\ x0' = x3 ^ a0 % p                       (* P0 calculates x0 = x3 ^ a0 mod p, sends it to P1 *)
-          /\ x1' = x3 ^ a1 % p                       (* P1 calculates x1 = x3 ^ a1 mod p, sends it to P0 *)
-          /\ x2' = x1 ^ a2 % p                       (* P2 calculates x2 = x1 ^ a2 mod p, sends it to P3 *)
-          /\ x3' = x1 ^ a3 % p                       (* P3 calculates x3 = x1 ^ a3 mod p, sends it to P2 *)
+          /\ x0' = mod_exp(a0,x3,1,p)                (* P0 calculates x0 = x3 ^ a0 mod p, sends it to P1 *)
+          /\ x1' = mod_exp(a1,x3,1,p)                (* P1 calculates x1 = x3 ^ a1 mod p, sends it to P0 *)
+          /\ x2' = mod_exp(a2,x1,1,p)                (* P2 calculates x2 = x1 ^ a2 mod p, sends it to P3 *)
+          /\ x3' = mod_exp(a3,x1,1,p)                (* P3 calculates x3 = x1 ^ a3 mod p, sends it to P2 *)
           /\ IF x0' = key /\ h0' = 2                 (* If the value of x0 equals key and P0 has received two *)
                  THEN /\ ck0' = TRUE                 (* messages, then ck0 becomes TRUE *)
                  ELSE /\ ck0' = ck0
@@ -86,10 +86,10 @@ Phase3 == /\ pc = "Phase 3"
           /\ h1' = h1 + 1                            (* P1 receives x0, h1 increases *)
           /\ h2' = h2 + 1                            (* P2 receives x3, h2 increases *)
           /\ h3' = h3 + 1                            (* P3 receives x2, h3 increases *)
-          /\ x0' = x1 ^ a0 % p                       (* P0 calculates x0 = x1 ^ a0 mod p as his key *)
-          /\ x1' = x0 ^ a1 % p                       (* P1 calculates x2 = x0 ^ a1 mod p as his key *)
-          /\ x2' = x3 ^ a2 % p                       (* P2 calculates x3 = x3 ^ a2 mod p as his key *)
-          /\ x3' = x2 ^ a3 % p                       (* P3 calculates x4 = x2 ^ a3 mod p as his key *)
+          /\ x0' = mod_exp(a0,x1,1,p)                (* P0 calculates x0 = x1 ^ a0 mod p as his key *)
+          /\ x1' = mod_exp(a1,x0,1,p)                (* P1 calculates x2 = x0 ^ a1 mod p as his key *)
+          /\ x2' = mod_exp(a2,x3,1,p)                (* P2 calculates x3 = x3 ^ a2 mod p as his key *)
+          /\ x3' = mod_exp(a3,x2,1,p)                (* P3 calculates x4 = x2 ^ a3 mod p as his key *)
           /\ IF x0' = key /\ h0' = 2                 (* If the value of x0 equals key and P0 has received two *)
                  THEN /\ ck0' = TRUE                 (* messages, then ck0 becomes TRUE *)
                  ELSE /\ ck0' = ck0
@@ -130,5 +130,5 @@ GetMutualKey == (<>ck0) /\ (<>ck1) /\ (<>ck2) /\ (<>ck3)
 
 =============================================================================
 \* Modification History
-\* Last modified Mon May 14 15:02:39 ICT 2018 by Emp. Elesar II
-\* Created Mon Mar 26 12:47:25 ICT 2018 by Emp. Elesar II
+\* Last modified Wed May 23 13:29:43 ICT 2018 by Emp. Elesar II
+\* Created Wed May 23 13:24:05 ICT 2018 by Emp. Elesar II
