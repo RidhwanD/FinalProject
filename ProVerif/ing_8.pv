@@ -1,0 +1,325 @@
+type G.					(* Finite group G *)
+type exponent.			(* The exponent (Integer) *)
+
+(* Cijk denotes channel in phase i from Sj to Sk *)
+free c101, c112, c123, c134, c145, c156, c167, c170 : channel.
+free c201, c212, c223, c234, c245, c256, c267, c270 : channel.
+free c301, c312, c323, c334, c345, c356, c367, c370 : channel.
+free c401, c412, c423, c434, c445, c456, c467, c470 : channel.
+free c501, c512, c523, c534, c545, c556, c567, c570 : channel.
+free c601, c612, c623, c634, c645, c656, c667, c670 : channel.
+free c701, c712, c723, c734, c745, c756, c767, c770 : channel.
+
+(* c: open channel for encrypted message m *)
+(* sc: open channel for encrypted message Key *)
+free sc, c: channel.
+free m, Key : bitstring [private].
+
+(* Pi4 denotes channel Si to S4 *)
+free p08, p18, p28, p38, p48, p58, p68, p78: channel [private].
+
+query attacker(m); 
+attacker(Key).
+
+fun enc(bitstring, G): bitstring.			(* The encryption function *)
+fun dec(bitstring, G): bitstring.			(* The decryption function *)
+equation forall x: bitstring, y: G; dec(enc(x,y),y) = x. (* ExDx = DxEx = 1 *)
+
+const g : G[data].							(* Base of exponentiation G *)
+fun exp(G, exponent): G.					(* The exponentiation function *)
+
+(* Reserved for equation *)
+(* Equations regarding the exponentiation function *)
+
+equation forall 
+	x1: exponent, x2: exponent, x3: exponent, x4: exponent, 
+	x5: exponent, x6: exponent, x7: exponent, x8: exponent; 
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x7),x8)=
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x8),x7).
+
+equation forall 
+	x1: exponent, x2: exponent, x3: exponent, x4: exponent, 
+	x5: exponent, x6: exponent, x7: exponent, x8: exponent; 
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x7),x8)=
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x7),x8),x5),x6).
+
+equation forall 
+	x1: exponent, x2: exponent, x3: exponent, x4: exponent, 
+	x5: exponent, x6: exponent, x7: exponent, x8: exponent; 
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x7),x8)=
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x7),x8),x6),x5).
+
+equation forall 
+	x1: exponent, x2: exponent, x3: exponent, x4: exponent, 
+	x5: exponent, x6: exponent, x7: exponent, x8: exponent; 
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x7),x8)=
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x5),x6),x7),x8),x1),x2),x3),x4).
+
+equation forall 
+	x1: exponent, x2: exponent, x3: exponent, x4: exponent, 
+	x5: exponent, x6: exponent, x7: exponent, x8: exponent; 
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x7),x8)=
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x5),x6),x7),x8),x1),x2),x4),x3).
+
+equation forall 
+	x1: exponent, x2: exponent, x3: exponent, x4: exponent, 
+	x5: exponent, x6: exponent, x7: exponent, x8: exponent; 
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x7),x8)=
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x5),x6),x7),x8),x3),x4),x1),x2).
+
+equation forall 
+	x1: exponent, x2: exponent, x3: exponent, x4: exponent, 
+	x5: exponent, x6: exponent, x7: exponent, x8: exponent; 
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x1),x2),x3),x4),x5),x6),x7),x8)=
+	exp(exp(exp(exp(exp(exp(exp(exp(g,x5),x6),x7),x8),x3),x4),x2),x1).
+
+   (* End of equation *)
+
+set attacker = passive.
+
+let s0 =
+	new n0: exponent;						(* The secret exponent of S0 is n0 *)
+	out(c101, exp(g,n0)); 					(* S0 sends g^n0 to S1 *)
+
+	in(c170, g1: G);						(* S0 receives g^n7 from S7 *)
+	out(c201, exp(g1,n0));					(* S0 sends g^n7n0 to S1 *)
+
+	in(c270, g2: G);						(* S0 receives g^n6n7 from S7 *)
+	out(c301, exp(g2,n0));					(* S0 sends g^n6n7n0 to S1 *)
+
+	in(c370, g3: G);						(* S0 receives g^n5n6n7 from S7 *)
+	out(c401, exp(g3,n0));					(* S0 sends g^n5n6n7n0 to S1 *)
+
+	in(c470, g4: G);						(* S0 receives g^n4n5n6n7 from S7 *)
+	out(c501, exp(g4,n0));					(* S0 sends g^n4n5n6n7n0 to S1 *)
+
+	in(c570, g5: G);						(* S0 receives g^n3n4n5n6n7 from S7 *)
+	out(c601, exp(g5,n0));					(* S0 sends g^n3n4n5n6n7n0 to S1 *)
+
+	in(c670, g6: G);						(* S0 receives g^n2n3n4n5n6n7 from S7 *)
+	out(c701, exp(g6,n0));					(* S0 sends g^n2n3n4n5n6n7n0 to S1 *)
+
+	in(c770, g7: G);						(* S0 receives g^n1n2n3n4n5n6n7 from S7 *)
+	let comk0 = exp(g7,n0) in				(* S0 computes the key comk0 = g^n1n2n3n4n5n6n7n0 *)
+		out(c, enc(m, comk0));				(* S0 sends Ecomk0(m) using open channel c *)
+		out(p08, comk0).					(* S0 sends comk0 to S8 using private channel *)
+
+let s1 =
+	new n1: exponent;						(* The secret exponent of S1 is n1 *)
+	out(c112,exp(g,n1)); 					(* S1 sends g^n1 to S2 *)
+
+	in(c101, g1: G);						(* S1 receives g^n0 from S0 *)
+	out(c212, exp(g1,n1));					(* S1 sends g^n0n1 to S2 *)
+
+	in(c201, g2: G);						(* S1 receives g^n7n0 from S0 *)
+	out(c312, exp(g2,n1));					(* S1 sends g^n7n0n1 to S2 *)
+
+	in(c301, g3: G);						(* S1 receives g^n6n7n0 from S0 *)
+	out(c412, exp(g3,n1));					(* S1 sends g^n6n7n0n1 to S2 *)
+
+	in(c401, g4: G);						(* S1 receives g^n5n6n7n0 from S0 *)
+	out(c512, exp(g4,n1));					(* S1 sends g^n5n6n7n0n1 to S2 *)
+
+	in(c501, g5: G);						(* S1 receives g^n4n5n6n7n0 from S0 *)
+	out(c612, exp(g5,n1));					(* S1 sends g^n4n5n6n7n0n1 to S2 *)
+
+	in(c601, g6: G);						(* S1 receives g^n3n4n5n6n7n0 from S0 *)
+	out(c712, exp(g6,n1));					(* S1 sends g^n3n4n5n6n7n0n1 to S2 *)
+
+	in(c701, g7: G);						(* S1 receives g^n2n3n4n5n6n7n0 from S0 *)
+	let comk1 = exp(g7,n1) in				(* S1 computes the key comk1 = g^n2n3n4n5n6n7n0n1 *)
+		out(p18, comk1).					(* S1 sends comk1 to S8 using private channel *)
+
+let s2 =
+	new n2: exponent;						(* The secret exponent of S2 is n2 *)
+	out(c123, exp(g,n2)); 					(* S2 sends g^n2 to S3 *)
+
+	in(c112, g1: G);						(* S2 receives g^n1 from S1 *)
+	out(c223, exp(g1,n2));					(* S2 sends g^n1n2 to S3 *)
+
+	in(c212, g2: G);						(* S2 receives g^n0n1 from S1 *)
+	out(c323, exp(g2,n2));					(* S2 sends g^n0n1n2 to S3 *)
+
+	in(c312, g3: G);						(* S2 receives g^n7n0n1 from S1 *)
+	out(c423, exp(g3,n2));					(* S2 sends g^n7n0n1n2 to S3 *)
+
+	in(c412, g4: G);						(* S2 receives g^n6n7n0n1 from S1 *)
+	out(c523, exp(g4,n2));					(* S2 sends g^n6n7n0n1n2 to S3 *)
+
+	in(c512, g5: G);						(* S2 receives g^n5n6n7n0n1 from S1 *)
+	out(c623, exp(g5,n2));					(* S2 sends g^n5n6n7n0n1n2 to S3 *)
+
+	in(c612, g6: G);						(* S2 receives g^n4n5n6n7n0n1 from S1 *)
+	out(c723, exp(g6,n2));					(* S2 sends g^n4n5n6n7n0n1n2 to S3 *)
+
+	in(c712, g7: G);						(* S2 receives g^n3n4n5n6n7n0n1 from S1 *)
+	let comk2 = exp(g7,n2) in				(* S2 computes the key comk2 = g^n3n4n5n6n7n0n1n2 *)
+		out(p28, comk2).					(* S2 sends comk2 to S8 using private channel *)
+
+let s3 =
+	new n3: exponent;						(* The secret exponent of S3 is n3 *)
+	out(c134, exp(g,n3)); 					(* S3 sends g^n3 to S4 *)
+
+	in(c123, g1: G);						(* S3 receives g^n2 from S2 *)
+	out(c234, exp(g1,n3));					(* S3 sends g^n2n3 to S4 *)
+
+	in(c223, g2: G);						(* S3 receives g^n1n2 from S2 *)
+	out(c334, exp(g2,n3));					(* S3 sends g^n1n2n3 to S4 *)
+
+	in(c323, g3: G);						(* S3 receives g^n0n1n2 from S2 *)
+	out(c434, exp(g3,n3));					(* S3 sends g^n0n1n2n3 to S4 *)
+
+	in(c423, g4: G);						(* S3 receives g^n7n0n1n2 from S2 *)
+	out(c534, exp(g4,n3));					(* S3 sends g^n7n0n1n2n3 to S4 *)
+
+	in(c523, g5: G);						(* S3 receives g^n6n7n0n1n2 from S2 *)
+	out(c634, exp(g5,n3));					(* S3 sends g^n6n7n0n1n2n3 to S4 *)
+
+	in(c623, g6: G);						(* S3 receives g^n5n6n7n0n1n2 from S2 *)
+	out(c734, exp(g6,n3));					(* S3 sends g^n5n6n7n0n1n2n3 to S4 *)
+
+	in(c723, g7: G);						(* S3 receives g^n4n5n6n7n0n1n2 from S2 *)
+	let comk3 = exp(g7,n3) in				(* S3 computes the key comk3 = g^n4n5n6n7n0n1n2n3 *)
+		out(p38, comk3).					(* S3 sends comk3 to S8 using private channel *)
+
+let s4 =
+	new n4: exponent;						(* The secret exponent of S0 is n0 *)
+	out(c145, exp(g,n4)); 					(* S4 sends g^n4 to S5 *)
+
+	in(c134, g1: G);						(* S4 receives g^n3 from S3 *)
+	out(c245, exp(g1,n4));					(* S4 sends g^n3n4 to S5 *)
+
+	in(c234, g2: G);						(* S4 receives g^n2n3 from S3 *)
+	out(c345, exp(g2,n4));					(* S4 sends g^n2n3n4 to S5 *)
+
+	in(c334, g3: G);						(* S4 receives g^n1n2n3 from S3 *)
+	out(c445, exp(g3,n4));					(* S4 sends g^n1n2n3n4 to S5 *)
+
+	in(c434, g4: G);						(* S4 receives g^n0n1n2n3 from S3 *)
+	out(c545, exp(g4,n4));					(* S4 sends g^n0n1n2n3n4 to S5 *)
+
+	in(c534, g5: G);						(* S4 receives g^n7n0n1n2n3 from S3 *)
+	out(c645, exp(g5,n4));					(* S4 sends g^n7n0n1n2n3n4 to S5 *)
+
+	in(c634, g6: G);						(* S4 receives g^n6n7n0n1n2n3 from S3 *)
+	out(c745, exp(g6,n4));					(* S4 sends g^n6n7n0n1n2n3n4 to S5 *)
+
+	in(c734, g7: G);						(* S4 receives g^n5n6n7n0n1n2n3 from S3 *)
+	let comk4 = exp(g7,n4) in				(* S4 computes the key comk4 = g^n5n6n7n0n1n2n3n4 *)
+		out(p48, comk4).					(* S4 sends comk4 to S8 using private channel *)
+
+let s5 =
+	new n5: exponent;						(* The secret exponent of S0 is n0 *)
+	out(c156, exp(g,n5)); 					(* S5 sends g^n5 to S6 *)
+
+	in(c145, g1: G);						(* S5 receives g^n4 from S4 *)
+	out(c256, exp(g1,n5));					(* S5 sends g^n4n5 to S6 *)
+
+	in(c245, g2: G);						(* S5 receives g^n3n4 from S4 *)
+	out(c356, exp(g2,n5));					(* S5 sends g^n3n4n5 to S6 *)
+
+	in(c345, g3: G);						(* S5 receives g^n2n3n4 from S4 *)
+	out(c456, exp(g3,n5));					(* S5 sends g^n2n3n4n5 to S6 *)
+
+	in(c445, g4: G);						(* S5 receives g^n1n2n3n4 from S4 *)
+	out(c556, exp(g4,n5));					(* S5 sends g^n1n2n3n4n5 to S6 *)
+
+	in(c545, g5: G);						(* S5 receives g^n0n1n2n3n4 from S4 *)
+	out(c656, exp(g5,n5));					(* S5 sends g^n0n1n2n3n4n5 to S6 *)
+
+	in(c645, g6: G);						(* S5 receives g^n7n0n1n2n3n4 from S4 *)
+	out(c756, exp(g6,n5));					(* S5 sends g^n7n0n1n2n3n4n5 to S6 *)
+
+	in(c745, g7: G);						(* S5 receives g^n6n7n0n1n2n3n4 from S4 *)
+	let comk5 = exp(g7,n5) in				(* S5 computes the key comk5 = g^n6n7n0n1n2n3n4n5 *)
+		out(p58, comk5).					(* S5 sends comk5 to S8 using private channel *)
+
+let s6 =
+	new n6: exponent;						(* The secret exponent of S0 is n0 *)
+	out(c167, exp(g,n6)); 					(* S6 sends g^n6 *)
+
+	in(c156, g1: G);						(* S6 receives g^n5 from S5 *)
+	out(c267, exp(g1,n6));					(* S6 sends g^n5n6 to S7 *)
+
+	in(c256, g2: G);						(* S6 receives g^n4n5 from S5 *)
+	out(c367, exp(g2,n6));					(* S6 sends g^n4n5n6 to S7 *)
+
+	in(c356, g3: G);						(* S6 receives g^n3n4n5 from S5 *)
+	out(c467, exp(g3,n6));					(* S6 sends g^n3n4n5n6 to S7 *)
+
+	in(c456, g4: G);						(* S6 receives g^n2n3n4n5 from S5 *)
+	out(c567, exp(g4,n6));					(* S6 sends g^n2n3n4n5n6 to S7 *)
+
+	in(c556, g5: G);						(* S6 receives g^n1n2n3n4n5 from S5 *)
+	out(c667, exp(g5,n6));					(* S6 sends g^n1n2n3n4n5n6 to S7 *)
+
+	in(c656, g6: G);						(* S6 receives g^n0n1n2n3n4n5 from S5 *)
+	out(c767, exp(g6,n6));					(* S6 sends g^n0n1n2n3n4n5n6 to S7 *)
+
+	in(c756, g7: G);						(* S6 receives g^n7n0n1n2n3n4n5 from S5 *)
+	let comk6 = exp(g7,n6) in				(* S6 computes the key comk6 = g^n7n0n1n2n3n4n5n6 *)
+		out(p68, comk6).					(* S6 sends comk6 to S8 using private channel *)
+
+let s7 =
+	new n7: exponent;						(* The secret exponent of S0 is n0 *)
+	out(c170, exp(g,n7)); 					(* S7 sends g^n7 to S0 *)
+
+	in(c167, g1: G);						(* S7 receives g^n6 from S6 *)
+	out(c270, exp(g1,n7));					(* S7 sends g^n6n7 to S0 *)
+
+	in(c267, g2: G);						(* S7 receives g^n5n6 from S6 *)
+	out(c370, exp(g2,n7));					(* S7 sends g^n5n6n7 to S0 *)
+
+	in(c367, g3: G);						(* S7 receives g^n4n5n6 from S6 *)
+	out(c470, exp(g3,n7));					(* S7 sends g^n4n5n6n7 to S0 *)
+
+	in(c467, g4: G);						(* S7 receives g^n3n4n5n6 from S6 *)
+	out(c570, exp(g4,n7));					(* S7 sends g^n3n4n5n6n7 to S0 *)
+
+	in(c567, g5: G);						(* S7 receives g^n2n3n4n5n6 from S6 *)
+	out(c670, exp(g5,n7));					(* S7 sends g^n2n3n4n5n6n7 to S0 *)
+
+	in(c667, g6: G);						(* S7 receives g^n1n2n3n4n5n6 from S6 *)
+	out(c770, exp(g6,n7));					(* S7 sends g^n1n2n3n4n5n6n7 to S0 *)
+
+	in(c767, g7: G);						(* S7 receives g^n0n1n2n3n4n5n6 from S6 *)
+	let comk7 = exp(g7,n7) in				(* S7 computes the key comk7 = g^n0n1n2n3n4n5n6n7 *)
+		out(p78, comk7).					(* S7 sends comk7 to S8 using private channel *)
+
+let s8 =
+	in(p08, k0: G);							(* S8 receives g^n1n2n3n4n5n6n7n0 from S0 *)
+	in(p18, k1: G);							(* S8 receives g^n2n3n4n5n6n7n0n1 from S1 *)
+	in(p28, k2: G);							(* S8 receives g^n3n4n5n6n7n0n1n2 from S2 *)
+	in(p38, k3: G);							(* S8 receives g^n4n5n6n7n0n1n2n3 from S3 *)
+	in(p48, k4: G);							(* S8 receives g^n5n6n7n0n1n2n3n4 from S4 *)
+	in(p58, k5: G);							(* S8 receives g^n6n7n0n1n2n3n4n5 from S5 *)
+	in(p68, k6: G);							(* S8 receives g^n7n0n1n2n3n4n5n6 from S6 *)
+	in(p78, k7: G);							(* S8 receives g^n0n1n2n3n4n5n6n7 from S7 *)
+	
+	if k0 = k1 then							(* S8 compares the values *)
+		if k1 = k2 then
+			if k2 = k3 then
+				if k3 = k4 then
+					if k4 = k5 then
+						if k5 = k6 then
+							if k6 = k7 then	(* If all values are equals, then the process stops *)
+								0
+							else
+								out(sc, Key)(* Otherwise, S4 sends Key using open channel sc *)
+						else
+							out(sc, Key)	
+					else
+						out(sc, Key)	
+				else
+					out(sc, Key)	
+			else
+				out(sc, Key)	
+		else
+			out(sc, Key)			
+	else
+		out(sc, Key).
+
+process
+	(s0 | s1 | s2 | s3 | s4 | s5 | s6 | s7 | s8)	(* All subprocesses are executed in parallel *)
+
+

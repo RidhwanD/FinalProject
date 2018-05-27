@@ -1,0 +1,88 @@
+type G.					(* Finite group G *)
+type exponent.			(* The exponent (Integer) *)
+
+(* Cij denotes channel from Si to Sj *)
+free c01, c30, c12, c31, c23, c32, c, sc : channel.
+
+(* c: open channel for encrypted message m *)
+(* sc: open channel for encrypted message Key *)
+free m, Key : bitstring [private].
+
+(* Pi4 denotes channel Si to S4 *)
+free p04, p14, p24, p34 : channel [private].
+
+query attacker(m);
+attacker(Key).
+
+fun enc(bitstring, G): bitstring.			(* The encryption function *)
+fun dec(bitstring, G): bitstring.			(* The decryption function *)
+equation forall x: bitstring, y: G; dec(enc(x,y),y) = x. (* ExDx = DxEx = 1 *)
+
+const g : G[data].							(* Base of exponentiation G *)
+fun exp(G, exponent): G.					(* The exponentiation function *)
+
+(* Equations regarding the exponentiation function *)
+equation forall x: exponent, y: exponent; exp(exp(g,x),y) = exp(exp(g,y),x).
+equation forall x: exponent, y: exponent, z: exponent; exp(exp(exp(g,y),z),x)=exp(exp(exp(g,y),x),z).
+equation forall x: exponent, y: exponent, z: exponent; exp(exp(exp(g,y),z),x)=exp(exp(exp(g,x),z),y).
+equation forall x: exponent, y: exponent, z: exponent, t: exponent; exp(exp(exp(exp(g,x),y),z),t)=exp(exp(exp(exp(g,x),y),t),z).
+equation forall x: exponent, y: exponent, z: exponent, t: exponent;exp(exp(exp(exp(g,x),y),z),t)=exp(exp(exp(exp(g,x),z),t),y).
+equation forall x: exponent, y: exponent, z: exponent, t: exponent;exp(exp(exp(exp(g,x),y),z),t)=exp(exp(exp(exp(g,y),z),t),x).
+
+set attacker = passive.
+
+let s0 =
+	new n0: exponent;						(* The secret exponent of S0 is n0 *)
+	out(c01,exp(g,n0)); 					(* S0 sends g^n0 to S1 *)
+	in(c30,u: G);							(* S0 receives g^n1n2n3 from S3 *)
+	let comk0 = exp(u,n0) in 				(* S0 computes the key comk0 = g^n1n2n3n0 *)
+		out(c, enc(m,comk0));				(* S0 sends Ecomk0(m) using open channel c *)
+		out(p04,comk0).						(* S0 sends comk0 to S4 using private channel *)
+
+let s1 = 
+	new n1: exponent;						(* The secret exponent of S1 is n1 *)
+	in(c01,v: G);							(* S1 receives g^n0 from S0 *)
+	out(c12,(v,exp(g,n1),exp(v,n1))); 		(* S1 sends list (g^n0, g^n1, g^n0n1) to S2 *)
+	in(c31,w: G);							(* S1 receives g^n0n2n3 from S3 *)
+	let comk1 = exp(w,n1) in 				(* S1 computes the key comk1 = g^n0n2n3n1 *)
+		out(p14,comk1).						(* S1 sends comk1 to S4 using private channel *)
+
+let s2 = 
+	new n2: exponent;						(* The secret exponent of S2 is n2 *)
+	in(c12, (u: G,v: G,w: G)); 				(* S2 receives list (g^n0, g^n1, g^n0n1) from S1 *)
+	out(c23,(w, exp(u,n2), exp(v,n2), exp(w,n2))); 	
+	(* S2 sends list (g^n0n1, g^n0n2, g^n1n2, g^n0n1n2) to S3 *)
+	
+	in(c32,x: G);							(* S2 receives g^n0n1n3 from S3 *)
+	let comk2 = exp(x,n2) in 				(* S2 computes the key comk2 = g^n0n1n3n2 *)
+		out(p24,comk2).						(* S2 sends comk2 to S4 using private channel *)
+
+let s3 = 
+	new n3: exponent;						(* The secret exponent of S3 is n3 *)
+	in(c23,(u: G,v: G,w: G,x: G)); 			
+	(* S3 receives list (g^n0n1, g^n0n2, g^n1n2, g^n0n1n2) from S2 *)
+	
+	out(c30,exp(w,n3)); 					(* S3 sends g^n1n2n3 to S0 *)
+	out(c31,exp(v,n3)); 					(* S3 sends g^n0n2n3 to S1 *)
+	out(c32,exp(u,n3)); 					(* S3 sends g^n0n1n3 to S2 *)
+	let comk3 = exp(x,n3) in 				(* S3 computes the key comk3 = g^n0n1n2n3 *)
+		out(p34,comk3).						(* S3 sends comk3 to S4 using private channel *)
+
+let s4 =
+	in(p04, k0: G);							(* S4 receives g^n1n2n3n0 from S0 *)
+	in(p14, k1: G);							(* S4 receives g^n0n2n3n1 from S1 *)
+	in(p24, k2: G);							(* S4 receives g^n0n1n3n2 from S2 *)
+	in(p34, k3: G);							(* S4 receives g^n0n1n2n3 from S3 *)
+	if k0 = k1 then							(* S4 compares the values *)
+		if k1 = k2 then
+			if k2 = k3 then
+				0							(* If all values are equals, then the process stops *)
+			else
+				out(sc,Key)					(* Otherwise, S4 sends Key using open channel sc *)
+		else
+			out(sc,Key)			
+	else
+		out(sc,Key).
+
+process 
+	( s0 | s1 | s2 | s3 | s4 )				(* All subprocesses are executed in parallel *)

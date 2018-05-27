@@ -1,0 +1,102 @@
+type G.					(* Finite group G *)
+type exponent.			(* The exponent (Integer) *)
+
+(* Cijk denotes channel in phase i from Sj to Sk *)
+free c101, c112, c113, c123, c130, c131 : channel.   
+free c201, c210, c223, c232 : channel.
+
+(* c: open channel for encrypted message m *)
+(* sc: open channel for encrypted message Key *)
+free c, sc : channel.
+free m, Key : bitstring [private].
+
+(* Pi4 denotes channel Si to S4 *)
+free p04, p14, p24, p34 : channel [private].
+
+query attacker(m);
+attacker(Key).
+
+fun enc(bitstring, G): bitstring.			(* The encryption function *)
+fun dec(bitstring, G): bitstring.			(* The decryption function *)
+equation forall x: bitstring, y: G; dec(enc(x,y),y) = x. (* ExDx = DxEx = 1 *)
+
+const g : G[data].							(* Base of exponentiation G *)
+fun exp(G, exponent): G.					(* The exponentiation function *)
+
+(* Equations regarding the exponentiation function *)
+equation forall x: exponent, y: exponent, z: exponent, t: exponent; exp(exp(exp(exp(g,x),y),z),t)=exp(exp(exp(exp(g,x),y),t),z).
+equation forall x: exponent, y: exponent, z: exponent, t: exponent;exp(exp(exp(exp(g,x),y),z),t)=exp(exp(exp(exp(g,z),t),x),y).
+equation forall x: exponent, y: exponent, z: exponent, t: exponent;exp(exp(exp(exp(g,x),y),z),t)=exp(exp(exp(exp(g,z),t),y),x).
+
+set attacker = passive.
+
+let s0 =
+	new n0 : exponent;						(* The secret exponent of S0 is n0 *)
+	out(c101, exp(g,n0));					(* S0 sends g^n0 to S1 *)
+
+	in(c130, g1 : G);						(* S0 receives g^n2n3 from S3 *)
+	out(c201, exp(g1,n0));					(* S0 sends g^n2n3n0 to S1 *)
+
+	in(c210, g2 : G);						(* S0 receives g^n2n3n1 from S1 *)
+	let comk0 = exp(g2,n0) in 				(* S0 computes the key comk0 = g^n2n3n1n0 *)
+		out(c, enc(m,comk0));				(* S0 sends Ecomk0(m) using open channel c *)
+		out(p04, comk0).					(* S0 sends comk0 to S4 using private channel *)
+
+let s1 =
+	new n1 : exponent;						(* The secret exponent of S1 is n1 *)
+	in(c101, x1 : G);						(* S1 receives g^n0 from S0 *)
+	let g1 = exp(x1,n1) in 					(* S1 computes g1 = g^n0n1 *)
+		out(c112, g1);						(* S1 sends g1 to S2 *)
+		out(c113, g1);						(* S1 sends g1 to S3 *)
+
+	in(c131, g2 : G);						(* S1 receives g^n2n3 S3 *)
+	out(c210, exp(g2,n1));					(* S1 sends g^n2n3n1 to S0 *)
+
+	in(c201, g3 : G);						(* S1 receives g^n2n3n0 from S0 *)
+	let comk1 = exp(g3,n1) in 				(* S1 computes the key comk1 = g^n2n3n0n1 *)
+		out(p14, comk1).					(* S1 sends comk1 to S4 using private channel *)
+
+let s2 =
+	new n2 : exponent;						(* The secret exponent of S2 is n2 *)
+	out(c123, exp(g,n2));					(* S2 sends g^n2 to S3 *)
+
+	in(c112, g1 : G);						(* S2 receives g^n0n1 from S1 *)
+	out(c223, exp(g1,n2));					(* S2 sends g^n0n1n2 to S3 *)
+
+	in(c232, g2 : G);						(* S2 receives g^n0n1n3 from S3 *)
+	let comk2 = exp(g2,n2) in 				(* S2 computes the key comk2 = g^n0n1n3n2 *)
+		out(p24, comk2).					(* S2 sends comk2 to S4 using private channel *)
+
+let s3 = 
+	new n3 : exponent;						(* The secret exponent of S3 is n3 *)
+	in(c123, x1 : G);						(* S3 receives g^n2 from S2 *)
+	let g1 = exp(x1,n3) in					(* S3 computes g1 = g^n2n3 *)
+		out(c130, g1);						(* S3 sends g1 to S0 *)
+		out(c131, g1);						(* S3 sends g1 to S1 *)
+
+	in(c113, g2 : G);						(* S3 receives g^n0n1 S1 *)
+	out(c232, exp(g2,n3));					(* S3 sends g^n0n1n3 to S2 *)
+
+	in(c223, g3 : G);						(* S3 receives g^n0n1n2 from S2 *)
+	let comk3 = exp(g3,n3) in 				(* S3 computes the key comk3 = g^n0n1n2n3 *)
+		out(p34, comk3).					(* S3 sends comk3 to S4 using private channel *)
+
+let s4 =
+	in(p04, k0: G);							(* S4 receives g^n2n3n1n0 from S0 *)
+	in(p14, k1: G);							(* S4 receives g^n2n3n0n1 from S1 *)
+	in(p24, k2: G);							(* S4 receives g^n0n1n3n2 from S2 *)
+	in(p34, k3: G);							(* S4 receives g^n0n1n2n3 from S3 *)
+	if k0 = k1 then							(* S4 compares the values *)
+		if k1 = k2 then
+			if k2 = k3 then
+				0							(* If all values are equals, then the process stops *)
+			else
+				out(sc,Key)					(* Otherwise, S4 sends Key using open channel sc *)
+		else
+			out(sc,Key)			
+	else
+		out(sc,Key).
+
+process 
+	( s0 | s1 | s2 | s3 | s4 )				(* All subprocesses are executed in parallel *)
+
