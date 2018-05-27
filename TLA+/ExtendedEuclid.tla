@@ -2,10 +2,12 @@
 
 EXTENDS Integers, TLC
 
+(* Function ExEuc(a,b) returns (d,x,y) where d = gcd(a,b) = ax + by *)
+
 RECURSIVE ExEuc(_,_)
-ExEuc(a,b) == IF (b = 0) THEN << a, 1, 0 >>
-              ELSE LET x == ExEuc(b, a % b) IN
-                << x[1], x[3], (x[2] - (a \div b) * x[3]) >>
+ExEuc(a,b) == IF (b = 0) THEN << a, 1, 0 >>                     (* if b == 0 then return (a, 1, 0) *)
+              ELSE LET x == ExEuc(b, a % b) IN                  (* else x = EXTENDED-EUCLID(b, a mod b) *)
+                << x[1], x[3], (x[2] - (a \div b) * x[3]) >>    (* return (x[0], x[2], x[1] - floor(a/b)*x[2] *)
                     
 CekInverse(a,b) == LET x == ExEuc(a,b) IN
                 IF (x[1] = 1) THEN TRUE ELSE FALSE
@@ -16,5 +18,5 @@ Inverse(a,b) == LET x == ExEuc(a,b) IN
 
 =============================================================================
 \* Modification History
-\* Last modified Fri May 25 17:40:04 ICT 2018 by Emp. Elesar II
+\* Last modified Sun May 27 13:29:17 ICT 2018 by Emp. Elesar II
 \* Created Fri May 25 16:22:34 ICT 2018 by Emp. Elesar II
