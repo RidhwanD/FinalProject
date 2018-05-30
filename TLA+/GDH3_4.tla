@@ -52,9 +52,9 @@ Upflow == /\ pc = "Upflow"
           /\ h1' = h1 + 1                   (* S1 receives x0 from S0, h1 increases by 1 *)
           /\ x1' = mod_exp(a1,x0',1,p)      (* S1 calculates x1 = x0 ^ a1 mod p and sends it to S2 *)
           /\ h2' = h2 + 1                   (* S2 receives x1 from S1, h2 increases by 1 *)
-          /\ x2' = mod_exp(a2,x1',1,p)      (* S1 calculates x2 = x1 ^ a2 mod p and broadcasts it to other participants *)
+          /\ x2' = mod_exp(a2,x1',1,p)      (* S2 calculates x2 = x1 ^ a2 mod p and broadcasts it to other participants *)
           /\ h3' = h3 + 1                   (* S3 receives x2 from S2, h3 increases by 1 *)
-          /\ x3' = mod_exp(a3,x2',1,p)      (* S1 calculates x3 = x2 ^ a3 mod p as its mutual key *)
+          /\ x3' = mod_exp(a3,x2',1,p)      (* S3 calculates x3 = x2 ^ a3 mod p as its mutual key *)
           /\ IF x0' = key /\ h0 = 2         (* If x0 equals the key and S0 has received two messages from others *)
                 THEN /\ ck0' = TRUE         (* then ck0 becomes TRUE *)
                 ELSE /\ TRUE
@@ -80,7 +80,7 @@ Broadcast1 == /\ pc = "Broadcast1"
               /\ x0' = x2                   (* S0 receives x2 from S2 *)
               /\ h0' = h0 + 1               (* h0 increased by 1 *)
               /\ x1' = x2                   (* S1 receives x2 from S2 *)
-              /\ h1' = h1 + 1               (* h0 increased by 1 *)
+              /\ h1' = h1 + 1               (* h1 increased by 1 *)
               /\ IF x0' = key /\ h0' = 2    (* If x0 equals the key and S0 has received two messages from others *)
                     THEN /\ ck0' = TRUE     (* then ck0 becomes TRUE *)
                     ELSE /\ TRUE
@@ -188,5 +188,5 @@ GetMutualKey == (<>ck0) /\ (<>ck1) /\ (<>ck2) /\ (<>ck3)
 
 =============================================================================
 \* Modification History
-\* Last modified Wed May 30 15:39:18 ICT 2018 by Emp. Elesar II
+\* Last modified Wed May 30 20:49:40 ICT 2018 by Emp. Elesar II
 \* Created Wed May 23 16:14:27 ICT 2018 by Emp. Elesar II
